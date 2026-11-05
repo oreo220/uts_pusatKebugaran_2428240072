@@ -6,9 +6,9 @@ const anggotaGymController = require("../controllers/anggotaGymController");
 
 const cekApiKey = require("../middlewares/cekApiKey");
 
-router.get("/", anggotaGymController.getAll);
-
-router.get("/:id", anggotaGymController.getById);
+router.get("/", 
+    anggotaGymController.getAll
+);
 
 router.post(
     "/",

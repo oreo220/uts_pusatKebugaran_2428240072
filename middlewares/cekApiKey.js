@@ -1,14 +1,13 @@
-const cekApiKey = (req, res, next) => {
-  const apiKey = req.headers["x-api-key"];
+function cekApiKey(req, res, next) {
+    const apiKey = req.headers["x-api-key"];
 
-  if (!apiKey || apiKey !== process.env.API_KEY) {
-    return res.status(401).json({
-      success: false,
-      message: "API Key tidak valid atau tidak ditemukan"
-    });
-  }
+    if (apiKey !== process.env.API_KEY) {
+        return res.status(401).json({
+            message: "API key tidak valid"
+        });
+    }
 
-  next();
-};
+    next();
+}
 
 module.exports = cekApiKey;
