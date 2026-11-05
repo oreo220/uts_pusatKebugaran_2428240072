@@ -1,7 +1,7 @@
 
 const mongoose = require("mongoose");
 
-// Subschema untuk embedding fasilitas
+// Subschema untuk embedding kontak
 const kontakSchema = new mongoose.Schema(
     {
         telepon: {
@@ -19,41 +19,32 @@ const kontakSchema = new mongoose.Schema(
     }
 );
 
-// Schema utama ruang kelas
-const classroomSchema = new mongoose.Schema(
+// Schema utama anggota gym
+const anggotaGymSchema = new mongoose.Schema(
     {
-        kodeRuang: {
+        noAnggota: {
             type: String,
             required: true,
             unique: true,
             trim: true
         },
-        gedung: {
+        nama: {
             type: String,
             required: true,
             trim: true
         },
-        buildingId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Building",
-            required: true
-        },
-        lantai: {
+        beratBadan: {
             type: Number,
+            required: true,
+            min: 0
+        },
+        paket: {
+            type: string,
             required: true,
             min: 1
         },
-        kapasitas: {
-            type: Number,
-            required: true,
-            min: 1
-        },
-        adaProyektor: {
-            type: Boolean,
-            default: false
-        },
-        fasilitas: {
-            type: [fasilitasSchema],
+        kontak: {
+            type: [kontakSchema],
             default: []
         }
     },
@@ -62,4 +53,4 @@ const classroomSchema = new mongoose.Schema(
     }
 );
 
-module.exports = mongoose.model("Classroom", classroomSchema);
+module.exports = mongoose.model("AnggotaGym", anggotaGymSchema);

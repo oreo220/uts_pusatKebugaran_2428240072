@@ -20,4 +20,4 @@ const pelatihSchema = new mongoose.Schema(
     }
 );
 
-module.exports = mongoose.model("Pelatih", buildingSchema);
+module.exports = mongoose.model("Pelatih", pelatihSchema);
