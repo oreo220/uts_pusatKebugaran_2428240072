@@ -1,6 +1,7 @@
+
 const AnggotaGym = require("../models/anggotaGymModel");
 const Pelatih = require("../models/pelatihModel");
-const { errorHttp } = require("../middlewares/errorHandler");
+// const { errorHttp } = require("../middlewares/errorHandler");
 
 const FIELD_BOLEH_DIPILIH = [
     "noAnggota",
@@ -8,8 +9,8 @@ const FIELD_BOLEH_DIPILIH = [
     "beratBadan",
     "paket",
     "kontak",
-    "pelatihId"
-    "createdAt",
+    "pelatihId",
+    "createdAt"
 ];
 
 const FIELD_BOLEH_SORT = [
@@ -18,62 +19,41 @@ const FIELD_BOLEH_SORT = [
     "beratBadan",
     "paket",
     "kontak",
-    "createdAt",
+    "createdAt"
 ];
 
-// GET semua ruang kelas
+// GET ALL ANGGOTA GYM
 // Filtering, pagination, sorting, projection
 exports.getAll = async (req, res, next) => {
     try {
         const filter = {};
 
         // FILTERING
-        if (req.query.gedung) {
-            filter.gedung = req.query.gedung.trim().toUpperCase();
+        if (req.query.paket) {
+            filter.paket = req.query.paket.trim();
         }
 
-        if (req.query.lantai !== undefined) {
-            const lantai = Number(req.query.lantai);
-
-            if (!Number.isInteger(lantai) || lantai < 1) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Parameter lantai harus berupa angka positif"
-                });
-            }
-
-            filter.lantai = lantai;
+        if (req.query.pelatihId) {
+            filter.pelatihId = req.query.pelatihId;
         }
 
-        if (req.query.kapasitas !== undefined) {
-            const kapasitas = Number(req.query.kapasitas);
-
-            if (!Number.isFinite(kapasitas) || kapasitas < 1) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Parameter kapasitas harus berupa angka positif"
-                });
-            }
-
-            filter.kapasitas = kapasitas;
-        }
-
-        if (req.query.adaProyektor !== undefined) {
-            if (!["true", "false"].includes(req.query.adaProyektor)) {
-                return res.status(400).json({
-                    success: false,
-                    message: "adaProyektor harus bernilai true atau false"
-                });
-            }
-
-            filter.adaProyektor = req.query.adaProyektor === "true";
+        if (req.query.nama) {
+            filter.nama = {
+                $regex: req.query.nama.trim(),
+                $options: "i"
+            };
         }
 
         // PAGINATION
         const page = Number.parseInt(req.query.page, 10) || 1;
         const limit = Number.parseInt(req.query.limit, 10) || 10;
 
-        if (page < 1 || limit < 1 || !Number.isInteger(page) || !Number.isInteger(limit)) {
+        if (
+            !Number.isInteger(page) ||
+            !Number.isInteger(limit) ||
+            page < 1 ||
+            limit < 1
+        ) {
             return res.status(400).json({
                 success: false,
                 message: "Page dan limit harus berupa angka positif"
@@ -83,7 +63,8 @@ exports.getAll = async (req, res, next) => {
         const skip = (page - 1) * limit;
 
         // SORTING
-        const sort = req.query.sort || "kodeRuang";
+        const sort = req.query.sort || "noAnggota";
+
         const sortField = sort.startsWith("-")
             ? sort.substring(1)
             : sort;
@@ -105,7 +86,9 @@ exports.getAll = async (req, res, next) => {
                 .filter(Boolean);
 
             const valid = fields.length > 0 &&
-                fields.every(field => FIELD_BOLEH_DIPILIH.includes(field));
+                fields.every(field =>
+                    FIELD_BOLEH_DIPILIH.includes(field)
+                );
 
             if (!valid) {
                 return res.status(400).json({
@@ -118,7 +101,7 @@ exports.getAll = async (req, res, next) => {
         }
 
         // QUERY DATA
-        let query = Classroom.find(filter);
+        let query = AnggotaGym.find(filter);
 
         if (select) {
             query = query.select(select);
@@ -129,14 +112,17 @@ exports.getAll = async (req, res, next) => {
             .skip(skip)
             .limit(limit);
 
-        // Populate hanya jika buildingId ikut ditampilkan
-        if (!select || select.split(" ").includes("buildingId")) {
-            query = query.populate("buildingId");
+        // POPULATE DATA PELATIH
+        if (
+            !select ||
+            select.split(" ").includes("pelatihId")
+        ) {
+            query = query.populate("pelatihId");
         }
 
         const [data, total] = await Promise.all([
             query,
-            Classroom.countDocuments(filter)
+            AnggotaGym.countDocuments(filter)
         ]);
 
         res.json({
@@ -149,121 +135,161 @@ exports.getAll = async (req, res, next) => {
                 totalPages: Math.ceil(total / limit)
             }
         });
+
     } catch (err) {
         next(err);
     }
 };
 
-// GET ruang kelas berdasarkan ID
+
+// GET ANGGOTA GYM BERDASARKAN ID
 exports.getById = async (req, res, next) => {
     try {
-        const data = await Classroom.findById(req.params.id)
-            .populate("buildingId");
+        const data = await AnggotaGym.findById(req.params.id)
+            .populate("pelatihId");
 
         if (!data) {
-            return next(errorHttp(404, "Ruang kelas tidak ditemukan"));
+            return next(
+                errorHttp(404, "Anggota gym tidak ditemukan")
+            );
         }
 
         res.json({
             success: true,
             data
         });
+
     } catch (err) {
         next(err);
     }
 };
 
-// POST menambahkan ruang kelas
+
+// POST MENAMBAHKAN ANGGOTA GYM
 exports.create = async (req, res, next) => {
     try {
         const {
-            kodeRuang,
-            buildingId,
-            lantai,
-            kapasitas,
-            adaProyektor,
-            fasilitas
+            noAnggota,
+            nama,
+            beratBadan,
+            paket,
+            kontak,
+            pelatihId
         } = req.body;
 
-        const building = await Building.findById(buildingId);
+        // CEK PELATIH
+        if (pelatihId) {
+            const pelatih = await Pelatih.findById(pelatihId);
 
-        if (!building) {
-            return next(errorHttp(404, "Gedung yang dipilih tidak ditemukan"));
+            if (!pelatih) {
+                return next(
+                    errorHttp(404, "Pelatih tidak ditemukan")
+                );
+            }
         }
 
-        const data = await Classroom.create({
-            kodeRuang,
-            gedung: building.kodeGedung,
-            buildingId,
-            lantai,
-            kapasitas,
-            adaProyektor,
-            fasilitas
+        const data = await AnggotaGym.create({
+            noAnggota,
+            nama,
+            beratBadan,
+            paket,
+            kontak,
+            pelatihId
         });
 
-        const result = await data.populate("buildingId");
+        const result = await data.populate("pelatihId");
 
         res.status(201).json({
             success: true,
-            message: "Ruang kelas berhasil ditambahkan",
+            message: "Anggota gym berhasil ditambahkan",
             data: result
         });
+
     } catch (err) {
         next(err);
     }
 };
 
-// PUT memperbarui ruang kelas
+
+// PUT MEMPERBARUI ANGGOTA GYM
 exports.update = async (req, res, next) => {
     try {
-        const updateData = { ...req.body };
+        const updateData = {};
 
-        if (updateData.buildingId) {
-            const building = await Building.findById(updateData.buildingId);
+        const fieldUpdate = [
+            "noAnggota",
+            "nama",
+            "beratBadan",
+            "paket",
+            "kontak",
+            "pelatihId"
+        ];
 
-            if (!building) {
-                return next(errorHttp(404, "Gedung yang dipilih tidak ditemukan"));
+        // HANYA FIELD YANG DIIZINKAN
+        fieldUpdate.forEach(field => {
+            if (req.body[field] !== undefined) {
+                updateData[field] = req.body[field];
             }
+        });
 
-            updateData.gedung = building.kodeGedung;
+        // CEK PELATIH
+        if (updateData.pelatihId) {
+            const pelatih = await Pelatih.findById(
+                updateData.pelatihId
+            );
+
+            if (!pelatih) {
+                return next(
+                    errorHttp(404, "Pelatih tidak ditemukan")
+                );
+            }
         }
 
-        const data = await Classroom.findByIdAndUpdate(
+        const data = await AnggotaGym.findByIdAndUpdate(
             req.params.id,
             updateData,
             {
                 new: true,
                 runValidators: true
             }
-        ).populate("buildingId");
+        ).populate("pelatihId");
 
         if (!data) {
-            return next(errorHttp(404, "Ruang kelas tidak ditemukan"));
+            return next(
+                errorHttp(404, "Anggota gym tidak ditemukan")
+            );
         }
 
         res.json({
             success: true,
-            message: "Ruang kelas berhasil diperbarui",
+            message: "Anggota gym berhasil diperbarui",
             data
         });
+
     } catch (err) {
         next(err);
     }
 };
 
-// DELETE menghapus ruang kelas
+
+// DELETE MENGHAPUS ANGGOTA GYM
 exports.remove = async (req, res, next) => {
     try {
-        const data = await Classroom.findByIdAndDelete(req.params.id);
+        const data = await AnggotaGym.findByIdAndDelete(
+            req.params.id
+        );
 
         if (!data) {
-            return next(errorHttp(404, "Ruang kelas tidak ditemukan"));
+            return next(
+                errorHttp(404, "Anggota gym tidak ditemukan")
+            );
         }
 
         res.json({
             success: true,
-            message: "Ruang kelas berhasil dihapus"
+            message: "Anggota gym berhasil dihapus"
         });
+
     } catch (err) {
         next(err);
     }

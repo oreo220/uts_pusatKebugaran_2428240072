@@ -39,7 +39,7 @@ const anggotaGymSchema = new mongoose.Schema(
             min: 0
         },
         paket: {
-            type: string,
+            type: String,
             required: true,
             min: 1
         },
