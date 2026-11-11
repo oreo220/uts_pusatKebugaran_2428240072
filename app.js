@@ -1,39 +1,53 @@
-require("dotenv").config();
+require('dotenv').config();
 
-const express = require("express");
-const cors = require("cors");
+const express = require('express');
+const cors = require('cors');
+const mongoose = require('mongoose');   // tambahkan di antara require lainnya
+const logger = require('./middlewares/logger');
+const { notFoundHandler, errorHandler } = require('./middlewares/errorHandler');
 
-const anggotaGymRoutes = require("./routes/anggotaGymRoutes");
-const logger = require("./middlewares/logger");
-const {
-    notFoundHandler,
-    errorHandler
-} = require("./middlewares/errorHandler");
+// const mahasiswaRoutes = require('./routes/mahasiswaRoutes');
+// const fakultasRoutes = require('./routes/fakultasRoutes');
+const pelatihRoutes = require('./routes/pelatihRoutes');
+// const dosenRoutes = require('./routes/dosenRoutes');
 
 const app = express();
-
-app.use(cors());
-app.use(express.json());
-app.use(logger);
-
-app.get("/", (req, res) => {
-    res.json({
-        nama: "Sunita Aqila",
-        nim: "2428240072",
-        topik: "16 - Pusat kebugaran (annggotaGym)",
-    });
-});
-
-app.use("/anggotaGym", anggotaGymRoutes);
-
-app.use(notFoundHandler);
-
-app.use(errorHandler);
-
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-    console.log(`Server berjalan di http://localhost:${PORT}`);
+// ---------- Middleware global ----------
+app.use(logger);
+app.use(cors({
+  origin: process.env.CORS_ORIGIN,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+}));
+app.use(express.json());
+
+// ---------- Route dasar ----------
+app.get('/', (req, res) => {
+  res.send('Server Express.js berjalan!');
 });
 
-module.exports = app;
+// ---------- Route per modul ----------
+// app.use('/mahasiswa', mahasiswaRoutes);
+// app.use('/fakultas', fakultasRoutes);
+// app.use('/prodi', prodiRoutes);
+// app.use('/dosen', dosenRoutes);
+app.use('/pelatih', pelatihRoutes);
+
+// ---------- Handler 404 dan error handler (paling bawah) ----------
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+// app.listen(PORT, () => {
+//   console.log(`Server berjalan di http://localhost:${PORT}`);
+// });
+
+mongoose.connect(process.env.DB_URI)
+  .then(() => {
+    console.log('Terhubung ke MongoDB');
+    app.listen(PORT, () => console.log(`Server berjalan di http://localhost:${PORT}`));
+  })
+  .catch((err) => {
+    console.error('Gagal terhubung:', err.message);
+    process.exit(1);
+  });
