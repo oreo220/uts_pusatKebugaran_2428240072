@@ -1,103 +1,30 @@
-const Building = require("../models/buildingModel");
-const { errorHttp } = require("../middlewares/errorHandler");
+const Pelatih = require('../models/pelatihModel');
 
-exports.getAll = async (req, res, next) => {
-    try {
-        const data = await Building.find();
-
-        res.json({
-            success: true,
-            data
-        });
-    } catch (err) {
-        next(err);
-    }
+exports.create = async (req, res) => {
+  try {
+    const pelatih = await Pelatih.create(req.body);
+    res.status(201).json(pelatih);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
 };
 
-exports.getById = async (req, res, next) => {
-    try {
-        const data = await Building.findById(req.params.id);
-
-        if (!data) {
-            return next(errorHttp(404, "Gedung tidak ditemukan"));
-        }
-
-        res.json({
-            success: true,
-            data
-        });
-    } catch (err) {
-        next(err);
-    }
+exports.getAll = async (req, res) => {
+  const filter = {};
+  if (req.query.kota) {
+    filter['alamat.kota'] = String(req.query.kota);
+  }
+  if (req.query.prodi) {
+    const pelatih = await Pelatih.findOne({ kode: String(req.query.prodi).toUpperCase() });
+    // Kode pelatih tidak dikenal -> hasil kosong ($in: [] tidak cocok dengan apa pun)
+    filter.pelatihId = pelatih ? pelatih._id : { $in: [] };
+  }
+  const data = await Pelatih.find(filter).populate('pelatihId');
+  res.json(data);
 };
 
-exports.create = async (req, res, next) => {
-    try {
-        const data = await Building.create(req.body);
-
-        res.status(201).json({
-            success: true,
-            message: "Gedung berhasil ditambahkan",
-            data
-        });
-    } catch (err) {
-        next(err);
-    }
-};
-
-exports.update = async (req, res, next) => {
-    try {
-        const data = await Building.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            {
-                new: true,
-                runValidators: true
-            }
-        );
-
-        if (!data) {
-            return next(errorHttp(404, "Gedung tidak ditemukan"));
-        }
-
-        res.json({
-            success: true,
-            message: "Gedung berhasil diperbarui",
-            data
-        });
-    } catch (err) {
-        next(err);
-    }
-};
-
-exports.remove = async (req, res, next) => {
-    try {
-        const Classroom = require("../models/classroomModel");
-
-        const jumlahRuang = await Classroom.countDocuments({
-            buildingId: req.params.id
-        });
-
-        if (jumlahRuang > 0) {
-            return next(
-                errorHttp(
-                    400,
-                    "Gedung tidak dapat dihapus karena masih digunakan oleh ruang kelas"
-                )
-            );
-        }
-
-        const data = await Building.findByIdAndDelete(req.params.id);
-
-        if (!data) {
-            return next(errorHttp(404, "Gedung tidak ditemukan"));
-        }
-
-        res.json({
-            success: true,
-            message: "Gedung berhasil dihapus"
-        });
-    } catch (err) {
-        next(err);
-    }
+exports.getById = async (req, res) => {
+  const data = await Pelatih.findById(req.params.id);
+  if (!data) throw errorHttp(404, 'Data tidak ditemukan');
+  res.json(data);
 };
