@@ -1,23 +1,8 @@
+const mongoose = require('mongoose');
 
-const mongoose = require("mongoose");
+const pelatihSchema = new mongoose.Schema({
+  kode: { type: String, required: [true, 'kode wajib diisi'], unique: true, trim: true, uppercase: true },
+  nama: { type: String, required: [true, 'nama wajib diisi'], trim: true },
+});
 
-const pelatihSchema = new mongoose.Schema(
-    {
-        idPelatih: {
-            type: String,
-            required: true,
-            unique: true,
-            trim: true
-        },
-        namapelatih: {
-            type: String,
-            required: true,
-            trim: true
-        }
-    },
-    {
-        timestamps: true
-    }
-);
-
-module.exports = mongoose.model("Pelatih", pelatihSchema);
+module.exports = mongoose.model('Pelatih', pelatihSchema);
