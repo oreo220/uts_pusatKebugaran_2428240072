@@ -1,3 +1,4 @@
+
 const Pelatih = require('../models/pelatihModel');
 
 exports.create = async (req, res) => {
@@ -11,15 +12,13 @@ exports.create = async (req, res) => {
 
 exports.getAll = async (req, res) => {
   const filter = {};
-  if (req.query.kota) {
-    filter['alamat.kota'] = String(req.query.kota);
+  if (req.query.kode) {
+    filter.kode = String(req.query.kode).toUpperCase();
   }
-  if (req.query.prodi) {
-    const pelatih = await Pelatih.findOne({ kode: String(req.query.prodi).toUpperCase() });
-    // Kode pelatih tidak dikenal -> hasil kosong ($in: [] tidak cocok dengan apa pun)
-    filter.pelatihId = pelatih ? pelatih._id : { $in: [] };
+  if (req.query.nama) {
+    filter.nama = String(req.query.nama);
   }
-  const data = await Pelatih.find(filter).populate('pelatihId');
+  const data = await Pelatih.find(filter);
   res.json(data);
 };
 

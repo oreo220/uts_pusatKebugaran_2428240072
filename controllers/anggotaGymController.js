@@ -1,3 +1,4 @@
+
 const AnggotaGym = require('../models/anggotaGymModel');
 const Pelatih = require('../models/pelatihModel');
 const { errorHttp } = require('../middlewares/errorHandler');
@@ -69,7 +70,7 @@ exports.getAll = async (req, res) => {
 };
 
 exports.getById = async (req, res) => {
-  const data = await AnggotaGym.findById(req.params.id).populate('pelatihId');
+  const data = await AnggotaGym.findById(req.params.id).populate('pelatihId', 'kode nama');
   if (!data) throw errorHttp(404, 'Data tidak ditemukan');
   res.json(data);
 };
